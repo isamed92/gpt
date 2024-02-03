@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import {
   GptMessage,
+  GptOrthographyMessage,
   MyMessage,
-  // TextMessageBox,
+  TextMessageBox,
   // TextMessageBoxFile,
   // TextMessageBoxSelect,
   TypingLoader,
 } from '../../components';
+import { orthographyUseCase } from '../../../core/use-cases';
 
 interface Message {
   text: string;
   isMyMessage: boolean;
+  info?: {
+    userScore: number;
+    errors: string[];
+    message: string;
+  };
 }
 
 export const OrthographyPage = () => {
@@ -24,8 +31,25 @@ export const OrthographyPage = () => {
       { text: message, isMyMessage: true },
     ]);
 
-    // llamar el caso de uso
+    const data = await orthographyUseCase(message);
 
+    if (!data.ok) {
+      setMessages((messages) => [
+        ...messages,
+        { text: 'No se pudo realizar la correccion', isMyMessage: false },
+      ]);
+    } else {
+      setMessages((messages) => [
+        ...messages,
+        {
+          text: data.message,
+          isMyMessage: false,
+          info: {
+            ...data,
+          },
+        },
+      ]);
+    }
     setIsLoading(false);
 
     // Añadir el mensaje de respuesta
@@ -36,12 +60,17 @@ export const OrthographyPage = () => {
       <div className='chat-messages'>
         <div className='grid grid-cols-12 gap-y-2'>
           <GptMessage text='Hello, I am GPT-3. How can I help you?' />
-          {messages.map((message, index) => (
-            <div key={index} className='col-span-12'>
+
+          {messages.map((message) => (
+            <div key={message.text} className='col-span-12'>
               {message.isMyMessage ? (
                 <MyMessage text={message.text} />
               ) : (
-                <GptMessage text={message.text} />
+                <GptOrthographyMessage
+                  errors={message.info!.errors}
+                  message={message.info!.message}
+                  userScore={message.info!.userScore}
+                />
               )}
             </div>
           ))}
@@ -58,11 +87,11 @@ export const OrthographyPage = () => {
         onSendMessage={handlePost}
         placeholder='Escribe aquí lo que deseas'
       /> */}
-      {/* <TextMessageBox
+      <TextMessageBox
         onSendMessage={handlePost}
         placeholder='Escribe aquí lo que deseas'
         disableCorrections
-      /> */}
+      />
       {/* <TextMessageBoxSelect
         onSendMessage={handlePost}
         options={[

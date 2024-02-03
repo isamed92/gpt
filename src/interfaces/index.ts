@@ -5,3 +5,5 @@ export interface Route {
   description: string;
   component: JSX.Element;
 }
+
+export * from './orthography.response';
