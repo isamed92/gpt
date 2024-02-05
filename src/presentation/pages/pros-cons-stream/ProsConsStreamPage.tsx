@@ -5,7 +5,7 @@ import {
   TextMessageBox,
   TypingLoader,
 } from '../../components';
-import { prosConsStreamUseCase } from '../../../core/use-cases';
+import { prosConsStreamGeneratorUseCase } from '../../../core/use-cases';
 
 interface Message {
   text: string;
@@ -23,29 +23,11 @@ export const ProsConsStreamPage = () => {
       { text: message, isMyMessage: true },
     ]);
 
-    const reader = await prosConsStreamUseCase(message);
+    const stream = prosConsStreamGeneratorUseCase(message);
     setIsLoading(false);
-    if (!reader) return;
+    setMessages((messages) => [...messages, { text: '', isMyMessage: false }]);
 
-    const decoder = new TextDecoder();
-    let streamText = '';
-
-    setMessages((messages) => [
-      ...messages,
-      { text: message, isMyMessage: false },
-    ]);
-
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        break;
-      }
-
-      const decodedChunk = decoder.decode(value, { stream: true });
-
-      streamText += decodedChunk;
-
+    for await (const streamText of stream) {
       setMessages((messages) => {
         const newMessages = [...messages];
         newMessages[newMessages.length - 1].text = streamText;
