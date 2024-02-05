@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   GptMessage,
   MyMessage,
@@ -13,17 +13,29 @@ interface Message {
 }
 
 export const ProsConsStreamPage = () => {
+  const abortController = useRef(new AbortController());
+  const isRunning = useRef(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
 
   const handlePost = async (message: string) => {
+    if (isRunning.current) {
+      abortController.current.abort();
+      abortController.current = new AbortController();
+    }
+
     setIsLoading(true);
+    isRunning.current = true;
     setMessages((messages) => [
       ...messages,
       { text: message, isMyMessage: true },
     ]);
 
-    const stream = prosConsStreamGeneratorUseCase(message);
+    const stream = prosConsStreamGeneratorUseCase(
+      message,
+      abortController.current.signal
+    );
     setIsLoading(false);
     setMessages((messages) => [...messages, { text: '', isMyMessage: false }]);
 
@@ -34,6 +46,8 @@ export const ProsConsStreamPage = () => {
         return newMessages;
       });
     }
+
+    isRunning.current = false;
   };
 
   return (
