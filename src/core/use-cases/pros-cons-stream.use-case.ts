@@ -23,23 +23,24 @@ export const prosConsStreamUseCase = async (prompt: string) => {
       return null;
     }
 
-    const decoder = new TextDecoder();
+    return reader;
+    // const decoder = new TextDecoder();
 
-    let text = '';
+    // let text = '';
 
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) {
-        break;
-      }
+    // // eslint-disable-next-line no-constant-condition
+    // while (true) {
+    //   const { value, done } = await reader.read();
+    //   if (done) {
+    //     break;
+    //   }
 
-      const decodedChunk = decoder.decode(value, { stream: true });
+    //   const decodedChunk = decoder.decode(value, { stream: true });
 
-      text += decodedChunk;
+    //   text += decodedChunk;
 
-      console.log(text);
-    }
+    //   console.log(text);
+    // }
   } catch (error) {
     return null;
   }

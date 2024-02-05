@@ -23,11 +23,35 @@ export const ProsConsStreamPage = () => {
       { text: message, isMyMessage: true },
     ]);
 
-    await prosConsStreamUseCase(message);
-
+    const reader = await prosConsStreamUseCase(message);
     setIsLoading(false);
+    if (!reader) return;
 
-    // Añadir el mensaje de respuesta
+    const decoder = new TextDecoder();
+    let streamText = '';
+
+    setMessages((messages) => [
+      ...messages,
+      { text: message, isMyMessage: false },
+    ]);
+
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      const decodedChunk = decoder.decode(value, { stream: true });
+
+      streamText += decodedChunk;
+
+      setMessages((messages) => {
+        const newMessages = [...messages];
+        newMessages[newMessages.length - 1].text = streamText;
+        return newMessages;
+      });
+    }
   };
 
   return (
@@ -35,11 +59,8 @@ export const ProsConsStreamPage = () => {
       <div className='chat-messages'>
         <div className='grid grid-cols-12 gap-y-2'>
           <GptMessage text='Que deseas comparar hoy?' />
-          {messages.map((message) => (
-            <div
-              key={message.isMyMessage + message.text}
-              className='col-span-12'
-            >
+          {messages.map((message, index) => (
+            <div key={index} className='col-span-12'>
               {message.isMyMessage ? (
                 <MyMessage text={message.text} />
               ) : (
